@@ -1,6 +1,4 @@
---For Postgresql, RUN ONLY ONCE FOR SETUP
-CREATE DATABASE db;
-
+--For Postgresql, RUN ONLY ONCE FOR SETUP AFTER CONNECTING TO DB
 CREATE TABLE users(
     user_id SERIAL PRIMARY KEY,
     acc_holder_name VARCHAR(50) NOT NULL,
@@ -33,6 +31,12 @@ CREATE TABLE accounts(
 
     CONSTRAINT acc_status_check CHECK(
         acc_status IN ('ACTIVE', 'CLOSED', 'BLOCKED')
+    ),
+    CONSTRAINT balance_check CHECK(
+        current_balance>=0
+    ),
+    CONSTRAINT positive_transfer_limit CHECK(
+        daily_transfer_limit > 0
     )
 );
 
@@ -45,14 +49,29 @@ CREATE TABLE transactions(
     merchant_name VARCHAR(100),
     product_code VARCHAR(10),
     transaction_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    transaction_type VARCHAR(30) NOT NULL,
 
     CONSTRAINT transaction_status_check CHECK(
         transaction_status IN ('SUCCESS', 'FAILED', 'BLOCKED')
     ),
 
     CONSTRAINT destination_check CHECK(
-        (recipient_id IS NOT NULL) OR
-        (merchant_name IS NOT NULL AND product_code IS NOT NULL)
+        (recipient_id IS NOT NULL AND merchant_name IS NULL AND product_code IS NULL) OR
+        (recipient_id IS NULL AND merchant_name IS NOT NULL AND product_code IS NOT NULL)
+    ),
+
+    CONSTRAINT prevent_self_transfers CHECK(
+        recipient_id IS NULL
+        OR acc_id<>recipient_id
+    ),
+    CONSTRAINT positive_transaction_amount CHECK(
+        transaction_amount > 0
+    ),
+    CONSTRAINT transaction_type_check CHECK(
+        transaction_type IN (
+            'P2P_TRANSFER',
+            'MERCHANT_PAYMENT'
+        )
     )
 );
 
@@ -105,5 +124,107 @@ CREATE TABLE data_telemetry(
     copy_paste_used INT DEFAULT 0, --no of times copy paste is used
     deviation_from_avg_amount DECIMAL(23, 2),
     frequency_of_transactions INT DEFAULT 0, --per session
-    VPN_probability DECIMAL(7, 6)
+    VPN_probability DECIMAL(7, 6),
+    CONSTRAINT VPN_probability_check CHECK(
+        (VPN_probability>=0) AND (VPN_probability<=1)
+    )
 );
+
+CREATE TABLE fraud_scores(
+    fraud_score_id SERIAL PRIMARY KEY,
+    transaction_id INT REFERENCES transactions(transaction_id) ON DELETE CASCADE,
+    login_id INT REFERENCES logins(login_id) ON DELETE CASCADE,
+    risk_score DECIMAL(5,2) NOT NULL,
+    fraud_probability DECIMAL(8,6) NOT NULL,
+    ml_model_version VARCHAR(50),
+    evaluated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fraud_probability_check CHECK(
+        (fraud_probability>=0) AND (fraud_probability<=1)
+    ),
+    CONSTRAINT fraud_target_check CHECK(
+        (transaction_id IS NOT NULL)
+        OR (login_id IS NOT NULL)
+    )
+);
+
+CREATE TABLE fraud_alerts(
+    alert_id SERIAL PRIMARY KEY,
+    transaction_id INT REFERENCES transactions(transaction_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    fraud_score_id INT REFERENCES fraud_scores(fraud_score_id) ON DELETE CASCADE,
+    alert_message TEXT NOT NULL,
+    alert_status VARCHAR(50) NOT NULL DEFAULT 'OPEN',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMPTZ,
+    CONSTRAINT alert_status_check CHECK(
+        alert_status IN ('OPEN', 'INVESTIGATING', 'RESOLVED', 'FALSE_POSITIVE')
+    ),
+    CONSTRAINT alert_target_check CHECK(
+        (transaction_id IS NOT NULL)
+        OR (fraud_score_id IS NOT NULL)
+    )
+);
+
+CREATE TABLE notification_logs(
+    notification_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    alert_id INT REFERENCES fraud_alerts(alert_id) ON DELETE CASCADE,
+    notification_type VARCHAR(50) NOT NULL,
+    notification_status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    sent_at TIMESTAMPTZ,
+    CONSTRAINT notification_type_check CHECK(
+        notification_type IN ('EMAIL', 'SMS', 'PUSH_NOTIFICATION')
+    ),
+    CONSTRAINT notification_status_check CHECK(
+        notification_status IN ('PENDING', 'SENT', 'FAILED')
+    )
+);
+
+CREATE TABLE suspicious_sessions(
+    suspicious_session_id SERIAL PRIMARY KEY,
+
+    login_id INT REFERENCES logins(login_id) ON DELETE CASCADE,
+
+    suspicion_reason TEXT NOT NULL,
+
+    severity INT NOT NULL,
+
+    detected_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    resolved BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+
+
+CREATE INDEX idx_transactions_acc_id
+ON transactions(acc_id);
+
+CREATE INDEX idx_transactions_recipient
+ON transactions(recipient_id);
+
+CREATE INDEX idx_transactions_time
+ON transactions(transaction_time);
+
+CREATE INDEX idx_logins_user_id
+ON logins(user_id);
+
+CREATE INDEX idx_logins_time
+ON logins(login_time);
+
+CREATE INDEX idx_telemetry_login
+ON data_telemetry(login_id);
+
+CREATE INDEX idx_telemetry_transaction
+ON data_telemetry(transaction_id);
+
+CREATE INDEX idx_fraud_scores_transaction
+ON fraud_scores(transaction_id);
+
+CREATE INDEX idx_alerts_user
+ON fraud_alerts(user_id);
+
+CREATE INDEX idx_fraud_scores_login
+ON fraud_scores(login_id);
+
+CREATE INDEX idx_alerts_status
+ON fraud_alerts(alert_status);
