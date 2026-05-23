@@ -10,21 +10,22 @@ INSERT INTO users(
     pass_hash,
     has_PAN,
     PAN_hash,
+    form_60_acknowledgement_no,
     email
 )
 VALUES
-('Rahul Sharma','9876543210','2000-05-10','hash1',TRUE,'panhash1','rahul@example.com'),
-('Priya Verma','9123456780','1999-08-21','hash2',TRUE,'panhash2','priya@example.com'),
-('Arjun Reddy','9012345678','2001-01-15','hash3',TRUE,'panhash3','arjun@example.com'),
-('Sneha Kapoor','9988776655','2002-03-11','hash4',TRUE,'panhash4','sneha@example.com'),
-('Karan Mehta','9876501234','1998-12-01','hash5',TRUE,'panhash5','karan@example.com'),
-('Aditi Rao','9765432101','2001-06-19','hash6',TRUE,'panhash6','aditi@example.com'),
-('Vikram Singh','9654321098','1997-02-14','hash7',TRUE,'panhash7','vikram@example.com'),
-('Neha Joshi','9543210987','1996-09-30','hash8',TRUE,'panhash8','neha@example.com'),
-('Ramesh Kumar','9432109876','1985-11-30','hash9',FALSE,NULL,'ramesh@example.com'),
-('Pooja Nair','9321098765','2003-04-05','hash10',TRUE,'panhash10','pooja@example.com'),
-('Manoj Patel','9210987654','1994-08-09','hash11',TRUE,'panhash11','manoj@example.com'),
-('Ishita Sen','9109876543','2000-10-20','hash12',TRUE,'panhash12','ishita@example.com');
+('Rahul Sharma','9876543210','2000-05-10','hash1',TRUE,'panhash1',NULL,'rahul@example.com'),
+('Priya Verma','9123456780','1999-08-21','hash2',TRUE,'panhash2',NULL,'priya@example.com'),
+('Arjun Reddy','9012345678','2001-01-15','hash3',TRUE,'panhash3',NULL,'arjun@example.com'),
+('Sneha Kapoor','9988776655','2002-03-11','hash4',TRUE,'panhash4',NULL,'sneha@example.com'),
+('Karan Mehta','9876501234','1998-12-01','hash5',TRUE,'panhash5',NULL,'karan@example.com'),
+('Aditi Rao','9765432101','2001-06-19','hash6',TRUE,'panhash6',NULL,'aditi@example.com'),
+('Vikram Singh','9654321098','1997-02-14','hash7',TRUE,'panhash7',NULL,'vikram@example.com'),
+('Neha Joshi','9543210987','1996-09-30','hash8',TRUE,'panhash8',NULL,'neha@example.com'),
+('Ramesh Kumar','9432109876','1985-11-30','hash9',FALSE,NULL,'FORM60-002','ramesh@example.com'),
+('Pooja Nair','9321098765','2003-04-05','hash10',TRUE,'panhash10',NULL,'pooja@example.com'),
+('Manoj Patel','9210987654','1994-08-09','hash11',TRUE,'panhash11',NULL,'manoj@example.com'),
+('Ishita Sen','9109876543','2000-10-20','hash12',TRUE,'panhash12',NULL,'ishita@example.com');
 
 INSERT INTO users(
     acc_holder_name,
