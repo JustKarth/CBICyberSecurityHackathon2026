@@ -3,6 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import testRoutes from "./routes/testRoutes.js";
+
 
 const app = express();
 
@@ -18,5 +20,7 @@ app.get("/health", (req, res) => {
     message: "Backend is running",
   });
 });
+
+app.use("/api",testRoutes);
 
 export default app;
