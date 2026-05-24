@@ -5,8 +5,11 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import testRoutes from "./routes/testRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import deviceRoutes from "./routes/deviceRoutes.js";
+import sessionRoutes from "./routes/sessionRoutes.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(
   cors({
@@ -19,6 +22,8 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/devices", deviceRoutes);
+app.use("/api/sessions", sessionRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({

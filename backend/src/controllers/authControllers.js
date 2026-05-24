@@ -1,4 +1,9 @@
 import { registerUser, loginUser, getUserProfile } from "../services/authServices.js";
+import {
+  recordLoginFromRequest,
+  recordFailedLoginFromRequest,
+} from "../services/loginServices.js";
+import { validateDeviceContext, extractLoginContext } from "../utils/loginContext.js";
 
 function handleAuthError(res, error, fallbackStatus = 500) {
   const status = error.statusCode || fallbackStatus;
@@ -22,15 +27,30 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const { email, password } = req.body;
+    validateDeviceContext(extractLoginContext(req));
     const data = await loginUser(email, password);
+
+    const tracking = await recordLoginFromRequest(req, {
+      user_id: data.user.user_id,
+      attempted_username: email,
+      session_status: "LOGGED_IN",
+    });
+
     res.status(200).json({
       success: true,
       message: "Login successful",
       ...data,
+      login: tracking.login,
+      device: tracking.device,
+      riskAlerts: tracking.riskAlerts,
     });
   } catch (error) {
+    if (email) {
+      await recordFailedLoginFromRequest(req, email);
+    }
     handleAuthError(res, error, 401);
   }
 };
