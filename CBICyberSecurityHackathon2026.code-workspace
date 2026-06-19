@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "CBICyberSecurityHackathon2026",
+			"path": "."
+		}
+	],
+	"settings": {
+		"python-envs.pythonProjects": [
+			{
+				"path": "ML",
+				"envManager": "ms-python.python:venv",
+				"packageManager": "ms-python.python:pip"
+			}
+		]
+	}
+}
